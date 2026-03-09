@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
+const galleryRoutes = require("./routes/galleryRoutes");
 
 const app = express();
 
@@ -11,16 +12,18 @@ app.use(cors());
 app.use(express.json());
 
 /* MongoDB Connection */
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => {
-  console.log("✅ MongoDB Connected");
-})
-.catch((error) => {
-  console.log("❌ MongoDB connection failed:", error.message);
-});
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
+  .catch((error) => {
+    console.log("❌ MongoDB connection failed:", error.message);
+  });
 
 /* Routes */
 app.use("/auth", authRoutes);
+app.use("/gallery", galleryRoutes);
 
 const PORT = process.env.PORT || 5000;
 
