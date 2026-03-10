@@ -182,257 +182,446 @@
 
 // }
 
+// // };
+
+// const Album = require("../models/Gallery");
+// const cloudinary = require("../cloudinary/cloudinary");
+
+// /* CREATE ALBUM */
+
+// exports.createAlbum = async (req,res)=>{
+// try{
+
+// const {
+// title,
+// location,
+// color,
+// icon,
+// description,
+// date,
+// photographer
+// } = req.body;
+
+// const coverImage = req.files.coverImage
+// ? req.files.coverImage[0].path
+// : null;
+
+// const images = req.files.images
+// ? req.files.images.map(file=>({
+// src:file.path,
+// thumbnail:file.path
+// }))
+// :[];
+
+// const album = await Album.create({
+// title,
+// location,
+// color,
+// icon,
+// description,
+// date,
+// photographer,
+// coverImage,
+// images
+// });
+
+// res.status(201).json({
+// success:true,
+// data:album,
+// message:"Album created successfully"
+// });
+
+// }catch(error){
+
+// res.status(500).json({
+// success:false,
+// message:error.message
+// });
+
+// }
 // };
+
+
+
+// /* GET ALL ALBUMS */
+
+// exports.getAlbums = async (req,res)=>{
+
+// const albums = await Album.find().sort({createdAt:-1});
+
+// res.json({
+// success:true,
+// data:albums
+// });
+
+// };
+
+
+
+// /* GET SINGLE ALBUM */
+
+// exports.getAlbum = async (req,res)=>{
+
+// const album = await Album.findById(req.params.id);
+
+// if(!album){
+
+// return res.status(404).json({
+// success:false,
+// message:"Album not found"
+// });
+
+// }
+
+// res.json({
+// success:true,
+// data:album
+// });
+
+// };
+
+
+
+// /* UPDATE ALBUM */
+
+// exports.updateAlbum = async (req,res)=>{
+// try{
+
+// const album = await Album.findById(req.params.id);
+
+// if(!album){
+
+// return res.status(404).json({
+// success:false,
+// message:"Album not found"
+// });
+
+// }
+
+// Object.assign(album,req.body);
+
+// if(req.files?.coverImage){
+// album.coverImage = req.files.coverImage[0].path;
+// }
+
+// if(req.files?.images){
+
+// const newImages = req.files.images.map(file=>({
+// src:file.path,
+// thumbnail:file.path
+// }));
+
+// album.images.push(...newImages);
+
+// }
+
+// await album.save();
+
+// res.json({
+// success:true,
+// data:album,
+// message:"Album updated successfully"
+// });
+
+// }catch(error){
+
+// res.status(500).json({
+// success:false,
+// message:error.message
+// });
+
+// }
+// };
+
+
+
+// /* DELETE ALBUM */
+
+// exports.deleteAlbum = async (req,res)=>{
+// try{
+
+// const album = await Album.findById(req.params.id);
+
+// if(!album){
+
+// return res.status(404).json({
+// success:false,
+// message:"Album not found"
+// });
+
+// }
+
+// /* delete images from cloudinary */
+
+// for(const img of album.images){
+
+// const publicId = img.src.split("/").pop().split(".")[0];
+
+// await cloudinary.uploader.destroy(`albums/${publicId}`);
+
+// }
+
+// /* delete cover image */
+
+// if(album.coverImage){
+
+// const publicId = album.coverImage.split("/").pop().split(".")[0];
+
+// await cloudinary.uploader.destroy(`albums/${publicId}`);
+
+// }
+
+// await Album.findByIdAndDelete(req.params.id);
+
+// res.json({
+// success:true,
+// message:"Album deleted successfully"
+// });
+
+// }catch(error){
+
+// res.status(500).json({
+// success:false,
+// message:error.message
+// });
+
+// }
+// };
+
+
+
+// /* DELETE IMAGE */
+
+// exports.deleteImage = async (req,res)=>{
+
+// try{
+
+// const {albumId,imageId} = req.params;
+
+// const album = await Album.findById(albumId);
+
+// const image = album.images.id(imageId);
+
+// if(!image){
+
+// return res.status(404).json({
+// success:false,
+// message:"Image not found"
+// });
+
+// }
+
+// /* remove from cloudinary */
+
+// const publicId = image.src.split("/").pop().split(".")[0];
+
+// await cloudinary.uploader.destroy(`albums/${publicId}`);
+
+// image.remove();
+
+// await album.save();
+
+// res.json({
+// success:true,
+// message:"Image deleted successfully"
+// });
+
+// }catch(error){
+
+// res.status(500).json({
+// success:false,
+// message:error.message
+// });
+
+// }
+
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const Album = require("../models/Gallery");
 const cloudinary = require("../cloudinary/cloudinary");
+const fs = require("fs");
 
 /* CREATE ALBUM */
+exports.createAlbum = async (req, res) => {
+  try {
+    const { title, location, color, icon, description, date, photographer } = req.body;
 
-exports.createAlbum = async (req,res)=>{
-try{
+    // Upload cover image
+    let coverImage = null;
+    if (req.files?.coverImage) {
+      const coverFile = req.files.coverImage[0];
+      const result = await cloudinary.uploader.upload(coverFile.path, {
+        folder: "albums"
+      });
+      coverImage = result.secure_url;
+      fs.unlinkSync(coverFile.path); // remove local file after upload
+    }
 
-const {
-title,
-location,
-color,
-icon,
-description,
-date,
-photographer
-} = req.body;
+    // Upload album images
+    let images = [];
+    if (req.files?.images) {
+      for (const file of req.files.images) {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "albums"
+        });
+        images.push({ src: result.secure_url, thumbnail: result.secure_url });
+        fs.unlinkSync(file.path); // remove local file after upload
+      }
+    }
 
-const coverImage = req.files.coverImage
-? req.files.coverImage[0].path
-: null;
+    const album = await Album.create({
+      title,
+      location,
+      color,
+      icon,
+      description,
+      date,
+      photographer,
+      coverImage,
+      images
+    });
 
-const images = req.files.images
-? req.files.images.map(file=>({
-src:file.path,
-thumbnail:file.path
-}))
-:[];
-
-const album = await Album.create({
-title,
-location,
-color,
-icon,
-description,
-date,
-photographer,
-coverImage,
-images
-});
-
-res.status(201).json({
-success:true,
-data:album,
-message:"Album created successfully"
-});
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
+    res.status(201).json({
+      success: true,
+      data: album,
+      message: "Album created successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
 
 /* GET ALL ALBUMS */
-
-exports.getAlbums = async (req,res)=>{
-
-const albums = await Album.find().sort({createdAt:-1});
-
-res.json({
-success:true,
-data:albums
-});
-
+exports.getAlbums = async (req, res) => {
+  try {
+    const albums = await Album.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: albums });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
 
 /* GET SINGLE ALBUM */
-
-exports.getAlbum = async (req,res)=>{
-
-const album = await Album.findById(req.params.id);
-
-if(!album){
-
-return res.status(404).json({
-success:false,
-message:"Album not found"
-});
-
-}
-
-res.json({
-success:true,
-data:album
-});
-
+exports.getAlbum = async (req, res) => {
+  try {
+    const album = await Album.findById(req.params.id);
+    if (!album) {
+      return res.status(404).json({ success: false, message: "Album not found" });
+    }
+    res.json({ success: true, data: album });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
 
 /* UPDATE ALBUM */
+exports.updateAlbum = async (req, res) => {
+  try {
+    const album = await Album.findById(req.params.id);
+    if (!album) {
+      return res.status(404).json({ success: false, message: "Album not found" });
+    }
 
-exports.updateAlbum = async (req,res)=>{
-try{
+    // Update basic fields
+    Object.assign(album, req.body);
 
-const album = await Album.findById(req.params.id);
+    // Replace cover image if provided
+    if (req.files?.coverImage) {
+      if (album.coverImage) {
+        const publicId = album.coverImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`albums/${publicId}`);
+      }
+      const coverFile = req.files.coverImage[0];
+      const result = await cloudinary.uploader.upload(coverFile.path, { folder: "albums" });
+      album.coverImage = result.secure_url;
+      fs.unlinkSync(coverFile.path);
+    }
 
-if(!album){
+    // Add new images
+    if (req.files?.images) {
+      for (const file of req.files.images) {
+        const result = await cloudinary.uploader.upload(file.path, { folder: "albums" });
+        album.images.push({ src: result.secure_url, thumbnail: result.secure_url });
+        fs.unlinkSync(file.path);
+      }
+    }
 
-return res.status(404).json({
-success:false,
-message:"Album not found"
-});
+    await album.save();
 
-}
-
-Object.assign(album,req.body);
-
-if(req.files?.coverImage){
-album.coverImage = req.files.coverImage[0].path;
-}
-
-if(req.files?.images){
-
-const newImages = req.files.images.map(file=>({
-src:file.path,
-thumbnail:file.path
-}));
-
-album.images.push(...newImages);
-
-}
-
-await album.save();
-
-res.json({
-success:true,
-data:album,
-message:"Album updated successfully"
-});
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
+    res.json({
+      success: true,
+      data: album,
+      message: "Album updated successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
 
 /* DELETE ALBUM */
+exports.deleteAlbum = async (req, res) => {
+  try {
+    const album = await Album.findById(req.params.id);
+    if (!album) {
+      return res.status(404).json({ success: false, message: "Album not found" });
+    }
 
-exports.deleteAlbum = async (req,res)=>{
-try{
+    // Delete all images from Cloudinary
+    if (album.images.length) {
+      for (const img of album.images) {
+        const publicId = img.src.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`albums/${publicId}`);
+      }
+    }
 
-const album = await Album.findById(req.params.id);
+    // Delete cover image from Cloudinary
+    if (album.coverImage) {
+      const publicId = album.coverImage.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`albums/${publicId}`);
+    }
 
-if(!album){
+    await Album.findByIdAndDelete(req.params.id);
 
-return res.status(404).json({
-success:false,
-message:"Album not found"
-});
-
-}
-
-/* delete images from cloudinary */
-
-for(const img of album.images){
-
-const publicId = img.src.split("/").pop().split(".")[0];
-
-await cloudinary.uploader.destroy(`albums/${publicId}`);
-
-}
-
-/* delete cover image */
-
-if(album.coverImage){
-
-const publicId = album.coverImage.split("/").pop().split(".")[0];
-
-await cloudinary.uploader.destroy(`albums/${publicId}`);
-
-}
-
-await Album.findByIdAndDelete(req.params.id);
-
-res.json({
-success:true,
-message:"Album deleted successfully"
-});
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
+    res.json({ success: true, message: "Album deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-
-
 /* DELETE IMAGE */
+exports.deleteImage = async (req, res) => {
+  try {
+    const { albumId, imageId } = req.params;
+    const album = await Album.findById(albumId);
+    if (!album) return res.status(404).json({ success: false, message: "Album not found" });
 
-exports.deleteImage = async (req,res)=>{
+    const image = album.images.id(imageId);
+    if (!image) return res.status(404).json({ success: false, message: "Image not found" });
 
-try{
+    // Delete image from Cloudinary
+    const publicId = image.src.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(`albums/${publicId}`);
 
-const {albumId,imageId} = req.params;
+    image.remove();
+    await album.save();
 
-const album = await Album.findById(albumId);
-
-const image = album.images.id(imageId);
-
-if(!image){
-
-return res.status(404).json({
-success:false,
-message:"Image not found"
-});
-
-}
-
-/* remove from cloudinary */
-
-const publicId = image.src.split("/").pop().split(".")[0];
-
-await cloudinary.uploader.destroy(`albums/${publicId}`);
-
-image.remove();
-
-await album.save();
-
-res.json({
-success:true,
-message:"Image deleted successfully"
-});
-
-}catch(error){
-
-res.status(500).json({
-success:false,
-message:error.message
-});
-
-}
-
+    res.json({ success: true, message: "Image deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

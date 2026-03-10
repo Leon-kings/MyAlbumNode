@@ -52,44 +52,104 @@
 
 
 
+// const express = require("express");
+// const router = express.Router();
+
+// const upload = require("../middlewares/upload");
+
+// const {
+// createAlbum,
+// getAlbums,
+// getAlbum,
+// updateAlbum,
+// deleteAlbum,
+// deleteImage
+// } = require("../controllers/galleryController");
+
+// router.post(
+// "/",
+// upload.fields([
+// {name:"coverImage",maxCount:1},
+// {name:"images",maxCount:50}
+// ]),
+// createAlbum
+// );
+
+// router.get("/",getAlbums);
+
+// router.get("/:id",getAlbum);
+
+// router.put(
+// "/:id",
+// upload.fields([
+// {name:"coverImage",maxCount:1},
+// {name:"images",maxCount:50}
+// ]),
+// updateAlbum
+// );
+
+// router.delete("/:id",deleteAlbum);
+
+// router.delete("/:albumId/images/:imageId",deleteImage);
+
+// module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
 const express = require("express");
 const router = express.Router();
 
+// Multer upload middleware
 const upload = require("../middlewares/upload");
 
+// Gallery controller
 const {
-createAlbum,
-getAlbums,
-getAlbum,
-updateAlbum,
-deleteAlbum,
-deleteImage
+  createAlbum,
+  getAlbums,
+  getAlbum,
+  updateAlbum,
+  deleteAlbum,
+  deleteImage
 } = require("../controllers/galleryController");
 
+// Create album (cover + multiple images)
 router.post(
-"/",
-upload.fields([
-{name:"coverImage",maxCount:1},
-{name:"images",maxCount:50}
-]),
-createAlbum
+  "/",
+  upload.fields([
+    { name: "coverImage", maxCount: 1 },
+    { name: "images", maxCount: 50 }
+  ]),
+  createAlbum
 );
 
-router.get("/",getAlbums);
+// Get all albums
+router.get("/", getAlbums);
 
-router.get("/:id",getAlbum);
+// Get single album
+router.get("/:id", getAlbum);
 
+// Update album (cover + additional images)
 router.put(
-"/:id",
-upload.fields([
-{name:"coverImage",maxCount:1},
-{name:"images",maxCount:50}
-]),
-updateAlbum
+  "/:id",
+  upload.fields([
+    { name: "coverImage", maxCount: 1 },
+    { name: "images", maxCount: 50 }
+  ]),
+  updateAlbum
 );
 
-router.delete("/:id",deleteAlbum);
+// Delete album
+router.delete("/:id", deleteAlbum);
 
-router.delete("/:albumId/images/:imageId",deleteImage);
+// Delete single image from album
+router.delete("/:albumId/images/:imageId", deleteImage);
 
 module.exports = router;
