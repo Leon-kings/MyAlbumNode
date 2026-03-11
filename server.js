@@ -6,6 +6,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const galleryRoutes = require("./routes/galleryRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const trackingRoutes = require("./routes/trackingRoutes");
 
 const app = express();
 
@@ -26,6 +27,7 @@ mongoose
 app.use("/auth", authRoutes);
 app.use("/gallery", galleryRoutes);
 app.use("/contacts", contactRoutes);
+app.use("/api", trackingRoutes);
 
 const PORT = process.env.PORT || 5000;
 
